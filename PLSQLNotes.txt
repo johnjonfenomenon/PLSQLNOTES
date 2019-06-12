@@ -1,0 +1,2295 @@
+Pl/SQL Logical Architecture
+	- Cooperates with SQL Engine
+	- Enables Subprograms
+	- Dynamic Queries
+	- case insensitivity
+	- optimizer
+	- enables Object-Oriented Programming
+	- Web Development
+	
+
+
+----------Blocks-----------------------
+
+	- DECLARE (optional)
+	- BEGIN (Mandatory)
+	- EXCEPTION (optional)
+	- END; (Mandatory)
+	
+	There are 3 types of blocks
+	- Anonymous Blocks
+	- Procedures
+	- Functions
+
+-------Variables - Naming Rules--------
+           - must start with a letter
+		   - can contain some special characters (like _#$)
+		   - can be maximum 30 characters
+		   - cannot have Oracles reserved words (select, varchar2, etc)
+		   
+		   DECLARING & INITIALIZING & USINg Variables
+		   - General Usage:
+			Name [CONSTANT (this is optional)] datatype [NOT NULL (if you wont allow a null value)][:= DEFAULT valu|expression]
+		   
+		   VARIABLE      - v_variable_name
+		   CURSOR        - cur_curson_name
+		   EXCEPTION     - e_exception_name
+		   PROCEDURE     - p_procedure_name
+		   BIND VARIABLE - b_bind_name
+		   
+		   
+		   
+		   
+	Scalar Data Types
+	-char(max_length)
+	-varchar2(max_length)
+	-number(precision,scale)
+	-binary_integer
+	-binary_float
+	-binary_double
+	-boolean
+	-date
+	-timestamp (precision)
+	-timestamp(p) with time zone
+	-timestamp(p) with local time zone
+	-interval(p) year to month
+	-interval(p) day to second(p)
+
+Examples:
+
+	set serveroutput on;
+	declare 
+		v varchar2(20) := 2 + 25*3;
+	begin
+		dbms_output.put_line(v); /*77*/
+	end;
+	
+	
+	
+	DECLARE 
+		v_text varchar2(50) not null DEFAULT 'Hello';
+		v_nuber number := 50;
+		v_number2 number(2) := 50.42;
+		v_number3 number(10,2) := 50.42;
+		v_number4 PLS_INTEGER := 50;
+		v_number5 BINARY_float := 50.42;
+		v_DATE DATE := '22-NOV-18 12:01:32';
+		v_DATE2 timestamp := systimestamp;
+		v_DATE3 timestamp(9) WITH TIME ZONE := systimestamp;
+		v_DATE4 interval day(4) to second (3) := '124 02:05:21.012 ';
+		v_DATE5 interval year to month := '12-3';
+	BEGIN
+		V_TEXT := 'PL/SQL' || 'Course'; 
+		DBMS_OUTPUT.PUT_LINE(V_TEXT); /*PL/SQLCourse*/
+		DBMS_OUTPUT.PUT_LINE(v_number); /*50*/ 
+		DBMS_OUTPUT.PUT_LINE(v_number2);/*50*/ 
+		DBMS_OUTPUT.PUT_LINE(v_number3); /*50.42*/
+		DBMS_OUTPUT.PUT_LINE(v_number4); /*50*/
+		DBMS_OUTPUT.PUT_LINE(v_number5); /*5.04199982E+001*/
+		DBMS_OUTPUT.PUT_LINE(v_DATE); /*22-NOV-18 12:01:32*/
+		DBMS_OUTPUT.PUT_LINE(v_DATE2); /*30-MAY-19 04.42.38.028000 PM */
+		DBMS_OUTPUT.PUT_LINE(v_DATE3);/*30-MAY-19 04.42.38.028000000 PM -04:00*/
+		DBMS_OUTPUT.PUT_LINE(v_DATE4); /*+0124 02:05:21.012*/
+		DBMS_OUTPUT.PUT_LINE(v_DATE5); /**+12-03/
+	END;
+	
+	
+---------------------BOOLEAN DATATYPE---------------------------
+
+	set serveroutput on;
+
+	declare
+		v_bool boolean := true;
+	begin
+		if (v_bool = true) then
+			dbms_output.put_line('its true');
+		else
+			dbms_output.put_line('its false');
+		end if;
+	end;
+	
+------------------USING % TYPE ATTRIBUTE--------------------------
+- this is used to synchronize database columns
+	ex.
+	desc employees;
+	declare
+		v_type employees.job_id%type;
+		v_type2 v_type%type;
+		v_type3 employees.job_id%type;
+	begin
+		v_type := 'IT_PROG';
+		v_type2 := 'SA_MAN';
+		v_type3 := NULL;  /*even though the DB field is indicated as not null the %type only takes in the field type so we are allowed to reassign to null*/
+		dbms_output.put_line(v_type); /*IT_PROG*/
+		dbms_output.put_line(v_type2); /*SA_MAN*/
+		dbms_output.put_line(v_type3||'HELLO'); /*HELLO*/
+		end;
+		
+----------DELIMITERS & COMMENTING YOUR CODE ------------------
+		symbol	Meaning
+		+		Addition
+		-		Subtraction | Negation
+		*		Multiplication
+		/		Division
+		=		Equality
+		@		Remote Access(accessing remote db)
+		;		Statement
+		<>		Inequality
+		!=		Inequality
+		||		Concatenation
+		:=		Assignment
+		--		Single line Comment
+		/**/	Multi-Line Comment
+		
+-----------VARIABLE SCOPE-------------------------------------
+Scope follows like js scope.  variables have local scope and inner begins can access outer variables
+--set serveroutput on;
+begin <<outer>> /*we do another begin end block and place the 'outer tag' this is 
+                 becuase we want to use the same variable name inside and outside*/
+declare
+  v_text varchar2(10) := 'Outer!';
+begin
+  declare
+   v_text varchar2(10) := 'Inner';
+  begin
+    dbms_output.put_line('inner -> ' || v_text);
+    dbms_output.put_line('inside_outer -> ' || outer.v_text); /*outer tag is now accessible*/
+  end;
+  --dbms_output.put_line('inner ->' || v_inner);
+  dbms_output.put_line(outer.v_text);
+end;
+end outer;
+
+-----------------BIND VARIABLES-------------------------------------------
+-- these are defined outside the block and can be utilized within the existing worksheet
+-- you cannot assign it in the declaration but you can reassign in the begin end block.
+
+-- you need to execute the block with a Run Script, not the Run Statement.
+
+--set serveroutput on;
+	
+	example
+	
+	variable var_emp_id number;
+
+	begin
+		:var_emp_id := 100;
+	end;
+
+	Select * from employees where employee_id = :var_emp_id;
+
+------------------CONTROL STRUCTURES-----------------------------------------
+	IF STATEMENT
+	
+	IF condition THEN statements;
+	ELSIF condition THEN statements;
+	ELSIF condition THEN statements;
+	ELSE statements;
+	END IF;
+
+	example
+	
+	set serveroutput on;
+
+	declare
+		v_number number :=null;
+	begin
+		if v_number < 10 Then
+			dbms_output.put_line('smaller than 10');
+		elsif v_number < 20 Then
+			dbms_output.put_line('smaller than 20');
+		elsif v_number < 30 Then
+			dbms_output.put_line('smaller than 30');
+		else
+			if v_number is null then
+				dbms_output.put_line('The number is null');
+			else
+				dbms_output.put_line('greater than or equal to 30');
+			end if;
+		end if;
+	end;
+
+
+---------------CASE EXPRESSION-----------------------
+/*results in a single value used mostly when assigning*/
+	declare
+		v_job_code varchar2(10):= 'SA_MAN';
+		v_salary_increase number;
+	begin
+		v_salary_increase := case v_job_code
+			when 'SA_MAN' then .02
+			when 'SA_RE' then .03
+			else  0
+			end;
+		dbms_output.put_line('Your salary increase is: ' ||  v_salary_increase);
+	end;
+	
+	
+----------------CASE STATEMENT------------------------	
+/*results in the execution of a sequence of PL/SQL statements*/
+	declare
+		v_job_code varchar2(10) := 'IT_PROG';
+		v_department varchar2(10) := 'IT';
+		v_salary_increase number;
+	begin
+		case  
+			when v_job_code = 'SA_MAN' then 
+				v_salary_increase := 0.2;
+				dbms_output.put_line('The salary increase for a Sales Manager is : '|| v_salary_increase);
+			when v_department = 'IT' and v_job_code = 'IT_PROG' then 
+				v_salary_increase := 0.2;
+				dbms_output.put_line('The salary increase for a Sales Manager is : '|| v_salary_increase);
+			else 
+				v_salary_increase := 0;
+				dbms_output.put_line('The salary increase for this job code is : '|| v_salary_increase);
+		end CASE;
+	end;	
+
+------------------BASIC LOOPS----------------------------
+	/*will iterate atleast once*/
+	declare
+		v_counter number(2) :=0;
+	begin
+		loop
+			v_counter := v_counter+1;
+			dbms_output.put_line('My counter is: '|| v_counter);
+			
+			exit when v_counter = 5 ;
+     
+		end loop;
+	end;
+	
+---------------WHILE LOOPS-------------------------------
+/*iterates until a condition evaluates to false*/
+
+	declare
+		v_counter number(2) :=0;
+	begin
+		WHILE v_counter != 5 LOOP
+			v_counter := v_counter+1;
+			dbms_output.put_line('My counter is: '|| v_counter);
+		end loop;
+	end;
+	
+	
+-------------FOR LOOPS-------------------------------
+/*used when you have a definite start and ending*/
+/*no risk of infinite loop*/
+	begin
+		for i in REVERSE 1..3 loop
+			dbms_output.put_line('My counter is : '|| i);
+		end loop;
+	end;
+	
+	----------------------------
+	My counter is : 3
+	My counter is : 2
+	My counter is : 1
+
+
+-------------------------------NESTED LOOPS-----------------------------------
+	declare
+	 v_inner number := 1;
+	begin
+	 for v_outer in 1..5 loop
+	  dbms_output.put_line('My outer value is : ' || v_outer );
+		v_inner := 1;
+		loop
+		  v_inner := v_inner+1;
+		  dbms_output.put_line('  My inner value is : ' || v_inner );
+		  exit when v_inner*v_outer >= 15;
+		end loop;
+	 end loop;
+	end;
+-------------------------NESTED LOOPS WITH LABELS------------------------------
+	declare
+	 v_inner number := 1;
+	begin
+	<<outer_loop>>
+	 for v_outer in 1..5 loop
+	  dbms_output.put_line('My outer value is : ' || v_outer );
+		v_inner := 1;
+		<<inner_loop>>
+		loop
+		  v_inner := v_inner+1;
+		  dbms_output.put_line('  My inner value is : ' || v_inner );
+		  if (v_inner*v_outer >= 16)then
+			dbms_output.put_line('about to exit the outer');
+			exit outer_loop; /*this will jump to the line after the end loop outer_loop*/ 
+		  end if;
+		  if (v_inner*v_outer >= 15) then
+			dbms_output.put_line('about to exit the inner');
+			exit;
+		  end if;
+		end loop inner_loop;
+	 end loop outer_loop;
+	end;
+	--------------------------------------------------------------------------
+My outer value is : 1
+  My inner value is : 2
+  My inner value is : 3
+  My inner value is : 4
+  My inner value is : 5
+  My inner value is : 6
+  My inner value is : 7
+  My inner value is : 8
+  My inner value is : 9
+  My inner value is : 10
+  My inner value is : 11
+  My inner value is : 12
+  My inner value is : 13
+  My inner value is : 14
+  My inner value is : 15
+about to exit the inner
+My outer value is : 2
+  My inner value is : 2
+  My inner value is : 3
+  My inner value is : 4
+  My inner value is : 5
+  My inner value is : 6
+  My inner value is : 7
+  My inner value is : 8
+about to exit the outer
+
+-------------------------------CONTINUE-------------------------------------------------
+	declare
+	 v_inner number := 1;
+	begin
+	<<outer_loop>>
+	 for v_outer in 1..5 loop /*outer loop */
+	  dbms_output.put_line('My outer value is : ' || v_outer );
+		v_inner := 1;
+		<<inner_loop>>
+		loop
+		  v_inner := v_inner+1;
+		  continue outer_loop when v_inner = 4; /*when v_inner equals 4 we jump back to the outer loop iteration*/
+		  dbms_output.put_line('  My inner value is : ' || v_inner );
+		end loop inner_loop;
+	 end loop outer_loop;
+	end;
+     -----------------------------------------------------------------
+	anonymous block completed
+	My outer value is : 1
+	  My inner value is : 2
+	  My inner value is : 3
+	My outer value is : 2
+	  My inner value is : 2
+	  My inner value is : 3
+	My outer value is : 3
+	  My inner value is : 2
+	  My inner value is : 3
+	My outer value is : 4
+	  My inner value is : 2
+	  My inner value is : 3
+	My outer value is : 5
+	  My inner value is : 2
+	  My inner value is : 3
+	  
+----------------------------------------GOTO-------------------------------------------------------
+	How to use
+		GOTO labal_name;	  
+		
+	Restrictions
+	- cant go into a control structure
+	- cant go from outer block to inner block
+	- cant go out of a subprogrom
+	- cant go in or out of an exceptin handler
+	
+	example of a loop using goto statements to find a prime number
+
+		declare
+		  v_searched_number number :=21;
+		  v_is_prime boolean:= true;
+		  x number :=2;
+
+		begin
+		  <<start_point>>
+		  --for x in 2..v_searched_number-1 loop
+			--dbms_output.put_line(x);
+			if v_searched_number mod x = 0 then
+			  dbms_output.put_line(v_searched_number || ' is not a prime number ..');
+			  v_is_prime := false;
+			  goto end_point;
+			end if;
+			x:=x+1;
+			
+			if x = v_searched_number then
+			  --v_is_prime := true;
+			  goto is_prime;    
+			else
+			  goto start_point;
+			end if;
+		  --end loop;
+		  
+		  <<is_prime>>  
+		  --if v_is_prime then
+			dbms_output.put_line(v_searched_number|| ' is a prime number ..');
+			goto end_point;
+		 -- end if;
+		  
+		  <<end_point>>
+		  dbms_output.put_line('Check complete');
+		end;
+
+
+----------------------------------------Using Variables in Select-------------------------------------
+
+	--insert into employees (Select max(employee_id)+1, 'John','Reyes','JReyes761@yahoo.com','732.770.5918', '10-JUN-19 12:00:00','IT_PROG',108000,null,null,100 from employees);
+	declare
+	  v_name varchar2(50);
+	  v_salary employees.salary%type;
+	  v_employee_id employees.employee_id%type :=130;
+	begin
+	  
+	  Select employee_id into v_employee_id from employees where last_name = 'Reyes';
+	  dbms_output.put_line('employee_id: ' ||v_employee_id);
+	  
+	  Select first_name ||' ' || last_name, salary into v_name, v_salary from employees where employee_id = v_employee_id;
+	  dbms_output.put_line('The salary of '|| v_name ||' is '|| v_salary);
+	end;
+	------------------------------------------------------------------
+	employee_id: 207
+	The salary of John Reyes is 108000
+
+
+-----------------------------------------------Sequences----------------------------------------
+	-- these can be used to keep track of the next available sequence number
+		
+		create sequence employee_id_seq 
+		start with 207
+		increment by 1;
+		
+	-- then we can later on use this sequence
+	    
+		declare
+			v_seq_no number;
+		Begin
+			for i in 1..10 loop
+				v_seq_no:= emp_id_seq.nextval;
+				insert into employees_copy (employee_id,first_name,last_name,email,hire_date,job_id,salary)
+				values (v_seq_no, 'employee#'||v_seq_no,'temp_emp','abc@xmail.com',sysdate,'IT_PROG',1000);
+			end loop;
+		End;
+		
+---------------------------------------CREATE SERVER OUTPUTS BY DEFAULT-----------------------
+	-- we ususlay use set 
+	serveroutput on;
+	dbms_output.put_line();
+	
+
+---------------------------------------SIMPLE DATA TYPES VS. COMPOSITE DATA TYPES---------------------------------------------------
+
+	Collections - composite data types, used to get more than one row
+	
+	Nested Tables - unbound table, index starts at 1
+	
+	Varrays  - bound limit, index starts at 1
+	
+	Ass. Arrays - can assign any value to index value
+	
+	PL/SQL Records - think of it as a row.
+	
+	record naming convention
+	r_name TABLE_NAME%rowtype; -- this creates a record with all the column types for the row
+	
+	specify own record type
+	type type_name is record (variable_name variable_type,
+								[variable_name variable_type,]
+								[........]);
+								
+								
+	example using rowtype
+	declare
+	    R_EMP employees%rowtype;
+  
+  
+		begin
+			Select * into r_emp from employees where employee_id = '101';
+			dbms_output.put_line(r_emp.first_name|| ' '||r_emp.last_name|| ' earns  ' ||r_emp.salary ||' and hired at '||r_emp.hire_date);
+		end;
+		------------------------------------------------------------------------------------------
+		Neena Kochhar earns  17000 and hired at 21-SEP-89 12:00:00
+	
+	example specifying own record type:
+	declare
+	    /*constructor for record*/
+		type t_emp is record (first_name varchar(50),
+								last_name employees.last_name%type,
+								salary employees.salary%type,
+								hire_date date);
+                        
+		R_EMP T_EMP;  /*creating the record object*/
+  
+  
+		begin
+			Select first_name, last_name, salary, hire_date into r_emp from employees where employee_id = '101';
+			dbms_output.put_line(r_emp.first_name|| ' '||r_emp.last_name|| ' earns  ' ||r_emp.salary ||' and hired at '||r_emp.hire_date);
+		end;
+		------------------------------------------------------------------------------------------
+		Neena Kochhar earns  17000 and hired at 21-SEP-89 12:00:00
+
+
+		declare
+		  type t_emp is record (first_name varchar2(50),
+								last_name employees.last_name%type,
+								salary employees.salary%type,
+								hire_date date);
+		  r_emp t_emp;
+		begin
+		  select first_name,last_name,salary,hire_date into r_emp 
+				from employees where employee_id = '101';
+		
+		  dbms_output.put_line(r_emp.first_name||' '||r_emp.last_name|| ' earns '||r_emp.salary||
+							   ' and hired at :' || r_emp.hire_date);
+		end;
+		-------------------------------
+		declare
+		  type t_edu is record (primary_school varchar2(100),
+								high_school varchar2(100),
+								university varchar2(100),
+								uni_graduate_date date
+								);
+		  type t_emp is record (first_name varchar2(50),
+								last_name employees.last_name%type,
+								salary employees.salary%type  NOT NULL DEFAULT 1000,
+								hire_date date,
+								dept_id employees.department_id%type,
+								department departments%rowtype,
+								education t_edu
+								);
+		  r_emp t_emp;
+
+		begin
+		  select first_name,last_name,salary,hire_date,department_id 
+				into r_emp.first_name,r_emp.last_name,r_emp.salary,r_emp.hire_date,r_emp.dept_id 
+				from employees where employee_id = '146';
+
+		  select * into r_emp.department from departments where department_id = r_emp.dept_id;
+
+		  r_emp.education.high_school := 'Beverly Hills';
+		  r_emp.education.university := 'Oxford';
+		  r_emp.education.uni_graduate_date := '01-JAN-13'; 
+		  
+		  dbms_output.put_line(r_emp.first_name||' '||r_emp.last_name|| ' earns '||r_emp.salary||
+							   ' and hired at :' || r_emp.hire_date);
+		  dbms_output.put_line('She graduated from '|| r_emp.education.university|| ' at '||  r_emp.education.uni_graduate_date);
+		  dbms_output.put_line('Her Department Name is : '|| r_emp.department.department_name);
+		end;
+		--------------------------------------------------------------------------------
+
+		Karen Partners earns 13500 and hired at :05-JAN-97 12:00:00
+		She graduated from Oxford at 01-JAN-13 12:00:00
+		Her Department Name is : Sales
+
+
+		create table retired_employees as select * from employees where 1=2;
+		select * from retired_employees;
+		/
+		declare
+			r_emp employees%rowtype;
+		begin
+			select * into r_emp from employees where employee_id = 104;
+		 r_emp.salary := 0;
+			r_emp.commission_pct := 0;
+			insert into retired_employees values r_emp;
+		end;
+		-----------------------------------------
+		declare
+			r_emp employees%rowtype;
+		begin
+			select * into r_emp from employees where employee_id = 104;
+			
+			r_emp.salary := 10;
+			r_emp.commission_pct := 0;
+			
+			/*UPDATE A TABLE USING THE RECORD*/
+			update retired_employees 
+			set row = r_emp 
+			where employee_id = 104;
+		end;
+
+	-------------------------------VARRAYS--------------------------------------------------------------------
+	 - varrays are bounded
+	 - index starts at 1
+	 - are one dimensional
+	 - are null by default
+	 - dont allow deletion
+	 
+	declare
+		type e_list is varray(5) of varchar2(50);
+		employees e_list; /*declare the variable*/
+	begin
+		/*initialize the variable*/
+		employees := e_list('Alex','Bruce','John','Bob','Richard');
+  
+		for i in employees.first()..employees.last() loop /*gets index of forst and last*/
+		
+			dbms_output.put_line(employees(i));
+		end loop;
+	end;
+	------------------------------------------------------------------
+	Alex
+	Bruce
+	John
+	Bob
+	Richard
+	
+	----------------------------------NESTED TABLES------------------------------------------
+	- nested tables are unbounded
+	- index starts at 1
+	- key value pairs
+	- allows deletion of any value
+	
+	---------------The simple usage of nested tables
+	declare
+	  type e_list is table of varchar2(50);
+	  emps e_list;
+	begin
+	  emps := e_list('Alex','Bruce','John');
+	  for i in 1..emps.count() loop
+		dbms_output.put_line(emps(i));
+	  end loop;
+	end;
+	---------------Adding a new value to a nested table after the initialization
+	declare
+	  type e_list is table of varchar2(50);
+	  emps e_list;
+	begin
+	  emps := e_list('Alex','Bruce','John');
+	  emps.extend;
+	  emps(4) := 'Bob';
+	  for i in 1..emps.count() loop
+		dbms_output.put_line(emps(i));
+	  end loop;
+	end;
+	---------------Adding values from the tabledeclare
+	  type e_list is table of employees.first_name%type;
+	  emps e_list := e_list();
+	  idx pls_integer := 1;
+	begin
+	  for x in 100 .. 110 loop
+		emps.extend;
+		select first_name into emps(idx) from employees where employee_id = x;
+		idx := idx + 1;
+	  end loop;
+	  for i in 1..emps.count() loop
+		dbms_output.put_line(emps(i));
+	  end loop;
+	end;
+
+	---------------delete example
+	declare
+	  type e_list is table of employees.first_name%type;
+	  emps e_list := e_list();
+	  idx pls_integer := 1;
+	begin
+	  for x in 100 .. 110 loop
+		emps.extend;
+		select first_name into emps(idx) from employees where employee_id = x;
+		idx := idx + 1;
+	  end loop;
+	  emps.delete(3);
+	  for i in 1..emps.count() loop
+	   if emps.exists(i) then 
+		dbms_output.put_line(emps(i));
+	   end if;
+	  end loop;
+	end;
+	
+--------------------------------ASSOCIATIVE ARRAYS----------------------------------------
+	- known as Index By Tables
+	- key can be a string
+	- can have scalar & record types
+	- do not need to be initialized
+	- are indexed
+	
+	type type_name as table of  value_data_type [NOT NULL]
+	INDEX BY {PLS_INTEGER | BINARY_INTEGER| VARCHAR2(size)};
+	
+	ex.
+	declare 
+		type e_list is table of employees.first_name%type index by pls_integer;
+		emps e_list;
+	begin
+		for x in 100..110 loop
+			select first_name into emps(x) from employees where employee_id = x;
+		end loop;
+		
+		for i in emps.first()..emps.last() loop	
+			dbms_output.put_line(emps(i));
+		end loop;
+	end;
+	
+	ex.  this example shows how you can use strings as the index in associative arrays.  It creates a key via email and value via the first name
+	declare 
+		type e_list is table of employees.first_name%type index by varchar2(50);
+		emps e_list;
+		idx employees.email%type;
+		v_email employees.email%type;
+		v_first_name employees.first_name%type;
+    
+	begin
+		for x in 100..110 loop
+			select first_name, email into v_first_name, v_email from employees where employee_id = x;
+			emps(v_email):= v_first_name;
+		end loop;
+    
+		idx := emps.first();
+		while idx is not null loop /*we use this because our index are not sequential*/
+			dbms_output.put_line('The email of '||emps(idx) || ' is '|| idx);
+			idx := emps.next(idx);
+		end loop;
+	end;
+	----------------------------------------------------------------------------------------------------------------
+	The email of Alexander is AHUNOLD
+	The email of Bruce is BERNST
+	The email of David is DAUSTIN
+	The email of Daniel is DFAVIET
+	The email of Diana is DLORENTZ
+	The email of John is JCHEN
+	The email of Lex is LDEHAAN
+	The email of Nancy is NGREENBE
+	The email of Neena is NKOCHHAR
+	The email of Steven is SKING
+	The email of Valli is VPATABAL
+	
+	-------------------------------------------------------USING COLLECTIONS WITH RECORDS-----------------------------------
+	declare 
+		type e_list is table of employees%rowtype index by employees.email%type; /*here we create a type that has a record of employee records*/
+		emps e_list;
+		idx employees.email%type;
+		--v_email employees.email%type;
+		--v_first_name employees.first_name%type;
+    
+	begin
+		for x in 100..110 loop
+      --select first_name, email into v_first_name, v_email from employees where employee_id = x;
+			--emps(v_email):= v_first_name;
+			select * into emps(x) from employees where employee_id = x; /*unlike previous example we are now utilizing the entire record instead of individual fields*/
+		end loop;
+
+		idx := emps.first();
+		while idx is not null loop /*we use this because our index are not sequential*/
+			dbms_output.put_line('The email of '||emps(idx).first_name ||' ' ||emps(idx).last_name||' is '|| emps(idx).email);
+			idx := emps.next(idx);
+		end loop;
+	end;
+	
+	--------- another way of writing the above 
+	declare 
+    type e_type is record (first_name employees.first_name%type,
+                           last_name employees.first_name%type,
+                           email employees.email%type);
+                           
+		type e_list is table of e_type index by employees.email%type; /*here we create a type that has a record of employee records*/
+		emps e_list;
+		idx employees.email%type;
+    
+	begin
+		for x in 100..110 loop
+			select first_name,last_name,email into emps(x) from employees where employee_id = x; /*unlike previous example we are now utilizing the entire record instead of individual fields*/
+		end loop;
+
+		idx := emps.first();
+		while idx is not null loop /*we use this because our index are not sequential*/
+			dbms_output.put_line('The email of '||emps(idx).first_name ||' ' ||emps(idx).last_name||' is '|| emps(idx).email);
+			idx := emps.next(idx);
+		end loop;
+	end;
+
+	------------another way with deletes
+	declare 
+		type e_type is record (first_name employees.first_name%type,
+                           last_name employees.first_name%type,
+                           email employees.email%type);
+                           
+		type e_list is table of e_type index by employees.email%type; /*here we create a type that has a record of employee records*/
+		emps e_list;
+		idx employees.email%type;
+    
+	begin
+		for x in 100..110 loop
+			select first_name,last_name,email into emps(x) from employees where employee_id = x; /*unlike previous example we are now utilizing the entire record instead of individual fields*/
+		end loop;
+    
+    emps.delete(100,104); /*syntax for deleting the records*/
+
+		idx := emps.last();  /*goes from last index*/
+		while idx is not null loop /*we use this because our index are not sequential*/
+			dbms_output.put_line('The email of '||emps(idx).first_name ||' ' ||emps(idx).last_name||' is '|| emps(idx).email);
+			idx := emps.prior(idx); /*goes to the prior index*/
+		end loop;
+	end;
+	
+	---------------using Associative arrays to insert records
+	
+	--create table employees_salary_history as Select * from employees where 1=2;
+	--alter table employees_salary_history add insert_date date;
+	--Select * from employees_salary_history;
+	--truncate table employees_salary_history;
+
+	declare
+		type e_list is table of employees_salary_history%rowtype index by pls_integer;
+		emps e_list;
+		idx pls_integer;
+	begin
+		for x in 100..110 loop
+			select e.*,sysdate into emps(x) from employees e where e.employee_id = x;
+		end loop;
+  
+		idx := emps.first();  /*goes from last index*/
+
+		while idx is not null loop /*we use this because our index are not sequential*/
+      
+			emps(idx).salary :=  emps(idx).salary + emps(idx).salary*0.2; /*changing the salary*/ 
+      
+			/*below will insert records into the table*/
+			insert into employees_salary_history values emps(idx);
+      
+			dbms_output.put_line('Data for '||emps(idx).first_name ||' ' ||emps(idx).last_name||' has been inserted into the employees_salary_history table' );
+      
+			idx := emps.next(idx); /*goes to the prior index*/
+		end loop;
+	end;
+	
+	----------------------------------STORING COLLECTIONS IN TABLES------------------------------------------------
+
+	---------------Storing Varray Example
+	create or replace type t_phone_number as object (p_type varchar2(10), p_number varchar2(50));
+	/
+	create or replace type v_phone_numbers as varray(3) of t_phone_number;
+	/
+	create table emps_with_phones (employee_id number,
+									first_name varchar2(50),
+									last_name varchar2(50),
+									phone_number v_phone_numbers); /*the emp_with_phones table contains a collection column called phone_number*/
+	/
+	select * from emps_with_phones;
+	/
+	insert into emps_with_phones values (10,'Alex','Brown',v_phone_numbers(
+																	t_phone_number('HOME','111.111.1111'),
+																	t_phone_number('WORK','222.222.2222'),
+																	t_phone_number('MOBILE','333.333.3333')
+																	));
+	insert into emps_with_phones values (11,'Bob','Green',v_phone_numbers(
+																	t_phone_number('HOME','000.000.000'),
+																	t_phone_number('WORK','444.444.4444')
+																	));                                                                
+	/
+	---------------Querying the varray example
+	select e.first_name,last_name,p.p_type,p.p_number 
+	from emps_with_phones e, 
+	table(e.phone_number) p; /*we are using that column as a table*/
+	------------------------------------------------------------------
+	Alex	Brown	HOME	111.111.1111
+	Alex	Brown	WORK	222.222.2222
+	Alex	Brown	MOBILE	333.333.3333
+	Bob		Green	HOME	000.000.000
+	Bob		Green	WORK	444.444.4444
+	
+	
+	
+	
+	
+
+	---------------The codes for the storing nested table example
+	
+	create or replace type t_phone_number as object (p_type varchar2(10), p_number varchar2(50));
+	create or replace type n_phone_numbers as table of t_phone_number; /*key word we are using table and not varray like previous example*/
+	/
+	create table emps_with_phones2 (employee_id number,
+                               first_name varchar2(50),
+                               last_name varchar2(50),
+                               phone_number n_phone_numbers)
+                               NESTED TABLE phone_number STORE AS phone_numbers_table;
+/
+	select * from emps_with_phones2;
+/
+	insert into emps_with_phones2 values (10,'Alex','Brown',n_phone_numbers(
+																	t_phone_number('HOME','111.111.1111'),
+																	t_phone_number('WORK','222.222.2222'),
+																	t_phone_number('MOBILE','333.333.3333')
+																	));
+	insert into emps_with_phones2 values (11,'Bob','Green',n_phone_numbers(
+																	t_phone_number('HOME','000.000.000'),
+																	t_phone_number('WORK','444.444.4444')
+																	));      
+/
+	select e.first_name,last_name,p.p_type,p.p_number from emps_with_phones2 e, table(e.phone_number) p;
+	
+	---------------new insert and update
+	insert into emps_with_phones2 values (11,'Bob','Green',n_phone_numbers(
+                                                                t_phone_number('HOME','000.000.000'),
+                                                                t_phone_number('WORK','444.444.4444'),
+                                                                t_phone_number('WORK2','444.444.4444'),
+                                                                t_phone_number('WORK3','444.444.4444'),
+                                                                t_phone_number('WORK4','444.444.4444'),
+                                                                t_phone_number('WORK5','444.444.4444')
+                                                                ));    
+	select * from emps_with_phones2;
+	update emps_with_phones2 set phone_number = n_phone_numbers(
+                                                                t_phone_number('HOME','000.000.000'),
+                                                                t_phone_number('WORK','444.444.4444'),
+                                                                t_phone_number('WORK2','444.444.4444'),
+                                                                t_phone_number('WORK3','444.444.4444'),
+                                                                t_phone_number('WORK4','444.444.4444'),
+                                                                t_phone_number('WORK5','444.444.4444')
+                                                                )
+	where employee_id = 11;
+	
+	---------------Adding a new value into the nested table inside of a table
+	declare
+		p_num n_phone_numbers;
+	begin
+		select phone_number into p_num from emps_with_phones2 where employee_id = 10;
+		p_num.extend;
+		p_num(5) := t_phone_number('FAX','999.99.9999');
+		UPDATE emps_with_phones2 set phone_number = p_num where employee_id = 10;
+	end;
+	
+	
+---------------------------------------------------------CURSORS---------------------------------------------------
+	- cursors are pointers to the data
+	- implicit cursors - are internal to the sql engine
+	- explicit cursors - created by the programmer
+	- collections vs cursors - collections are more of a resource hog and can cause crashed is you run out of memeory, while cursors wont use that much memory as they just point to the data
+	
+	- cursors need to be 
+						declared
+						open
+						fetch
+	
+	example:
+	
+	declare 
+		/*declaring cursor*/
+		cursor c_emps is select e.first_name, e.last_name, d.department_name 
+						from employees e, departments d
+						where e.department_id = d.department_id
+						and d.department_id between 30 and 60;
+		
+		v_first_name employees.first_name%type;
+		v_last_name employees.last_name%type;
+		v_department_name departments.department_name%type;
+	begin
+		/*opening and fetching into the cursor*/
+		open c_emps;
+		fetch c_emps into v_first_name,v_last_name, v_department_name;
+		dbms_output.put_line(v_first_name ||' '|| v_last_name|| ' works at '||v_department_name);
+		close c_emps;
+	end;
+	
+	-----------------above example using an efficient rowtype declaration
+	
+	declare 
+		cursor c_emps is select e.first_name, e.last_name, d.department_name 
+						from employees e, departments d
+						where e.department_id = d.department_id
+						and d.department_id between 30 and 60;
+		
+		/*v_emps will get all the record data rowtypes so you no longer have to declare variables*/
+		v_emp c_emps%rowtype;                 
+  
+	begin
+
+		open c_emps;
+		fetch c_emps into v_emp;
+		dbms_output.put_line(v_emp.first_name ||' '|| v_emp.last_name|| ' works at '||v_emp.department_name);
+		close c_emps;
+
+	end;
+		
+	-----------------------------looping through a cursor
+	
+	declare 
+		cursor c_emps is select e.first_name, e.last_name, d.department_name 
+                   from employees e, departments d
+                   where e.department_id = d.department_id
+                   and d.department_id between 30 and 60;
+  
+		v_emp c_emps%rowtype;                 
+  
+	begin
+
+		open c_emps;
+			loop /*use the loop functionality*/
+			fetch c_emps into v_emp;
+			exit when c_emps%notfound; /**use exit when not found to kill infinite loop/
+    
+			dbms_output.put_line(v_emp.first_name ||' '|| v_emp.last_name|| ' works at '||v_emp.department_name);
+    
+			end loop;
+		close c_emps;
+
+	end;
+	
+	---------------------------looping through cursor with while loop
+	declare 
+	cursor c_emps is select e.first_name, e.last_name, d.department_name 
+					from employees e, departments d
+					where e.department_id = d.department_id
+					and d.department_id between 30 and 60;
+  
+	v_emp c_emps%rowtype;                 
+  
+	begin
+
+		open c_emps;
+			/*need to fetch first record in*/
+			fetch c_emps into v_emp;
+	
+			while c_emps%found loop
+    
+				dbms_output.put_line(v_emp.first_name ||' '|| v_emp.last_name|| ' works at '||v_emp.department_name);
+    
+				/*this will fetch next items withi the loop*/
+				fetch c_emps into v_emp;
+    
+			end loop;
+		close c_emps;
+
+	end;
+	
+	-----------------------------Best way to iterate through cursor is For in loop
+	--no need to declare variables
+	--no need to open and close or fetch cursors for in automatcially handles all of it
+	
+	declare 
+	cursor c_emps is select e.first_name, e.last_name, d.department_name 
+                   from employees e, departments d
+                   where e.department_id = d.department_id
+                   and d.department_id between 30 and 60;
+	begin
+		for i in c_emps loop
+			dbms_output.put_line(i.first_name ||' '|| i.last_name|| ' works at '||i.department_name);
+		end loop;
+	end;
+	
+	--------or we can just put our cursor inside the for in clause
+	
+	begin
+		for i in (select e.first_name, e.last_name, d.department_name 
+                   from employees e, departments d
+                   where e.department_id = d.department_id
+                   and d.department_id between 30 and 60) loop
+			dbms_output.put_line(i.first_name ||' '|| i.last_name|| ' works at '||i.department_name);
+		end loop;
+	end;
+	
+----------------------------CURSORS WITH PARAMETERS--------------------------------
+	-- allows cursor to be used many timestamp
+	-- we put parameters in cursor for reusablity
+	declare
+		cursor cursor_name(paramter_name datatype,.....)
+		is Select_stmt;
+	begin
+		open cursor_name(parameter_values);
+			fetch cursor_name into variables,record etc;
+		close cursor_name;
+	end;
+	
+
+	example:
+	declare
+		cursor c_emps (p_dept_id number, p_job_id varchar2) is select e.first_name, e.last_name, d.department_name , e.job_id
+																from employees e, departments d 
+																where e.department_id = d.department_id
+																and  d.department_id =  p_dept_id
+																and  e.job_id = p_job_id;
+  
+		v_emps c_emps%rowtype;                 
+  
+	begin
+		open c_emps(:b_dept_id, 'ST_MAN');
+			fetch c_emps into v_emps;
+			dbms_output.put_line('The employees in department of ' || v_emps.department_name ||' that are: '|| v_emps.job_id);
+		close c_emps;
+    
+		for i in c_emps(:b_dept_id, 'ST_MAN') loop
+			dbms_output.put_line(i.first_name ||' '|| i.last_name);
+		end loop;
+    
+	end;
+	------------------------------------------------------------------------
+	The employees in department of Shipping that are: ST_MAN
+	Matthew Weiss
+	Adam Fripp
+	Payam Kaufling
+	Shanta Vollman
+	Kevin Mourgos
+	
+--------------------------------------------CURSOR ATTRIBUTES--------------------------
+
+	%FOUND - returns true if the fetch returns a row
+	%NOTFOUND - returns true if the fetch does not return a row
+	%ISOPEN  - retuns true if the cursor is open
+	%ROWCOUNT - returns the number of fetched rows
+	
+	example
+	
+	declare
+	cursor c_emps is select e.first_name, e.last_name, d.department_name from employees e, departments d where e.department_id = d.department_id and e.department_id = 50;
+  
+	v_emps c_emps%rowtype;
+	begin
+		if not c_emps%isopen then /*we did not open the cursor so we do a check*/
+			open c_emps; /*now we open*/
+    
+			fetch c_emps into v_emps; /*get initial row*/
+    
+			dbms_output.put_line('The employees in '||v_emps.department_name ||':');
+		
+			while c_emps%found loop  /*use the %found to cycle while there are itens in cursor*/
+				dbms_output.put_line(v_emps.first_name ||' '|| v_emps.last_name);
+				fetch c_emps into v_emps; /*get subsequent rows into v_emps*/
+			end loop;
+		end if;
+	end;
+	
+--------------------------------FOR UPDATE CLAUSE------------------------------------------
+	- when you update a row it is locked to others
+	- for update clause locks the selected rows
+	- nowait option will terminate execution if there is a lock
+	- for updateof clause locks only the selected tables
+	
+	cursor cursor_name(parameter_name datatype,...)
+		is select_statement
+		for update [of column(s) [nowait | wait n]
+		
+	example code:
+	grant create session to my_user;
+	grant select any table to my_user;
+	grant update on hr.employees_copy to my_user;
+	grant update on hr.departments to my_user;
+	
+	UPDATE EMPLOYEES_COPY SET PHONE_NUMBER = '1' WHERE EMPLOYEE_ID = 100;
+	declare
+		cursor c_emps is select employee_id,first_name,last_name,department_name
+		from employees_copy join departments using (department_id)
+		where employee_id in (100,101,102)
+		for update;
+	begin
+		open c_emps;
+	end;
+--------------- example of wait with second
+	declare
+		cursor c_emps is select employee_id,first_name,last_name,department_name
+			from employees_copy join departments using (department_id)
+			where employee_id in (100,101,102)
+			for update of employees_copy.phone_number, departments.location_id wait 5;
+	begin
+		open c_emps;
+	end;
+---------------example of nowait
+	declare
+		cursor c_emps is select employee_id,first_name,last_name,department_name
+			from employees_copy join departments using (department_id)
+			where employee_id in (100,101,102)
+			for update of employees_copy.phone_number, departments.location_id nowait;
+	begin
+		open c_emps;
+	end;
+	
+-----------------------------------WHERE CURRENT OF CLAUSE------------------------------------------
+	- where current of is used in combination with the for update
+	- the main purpose is it utilizez the built in rowid to find the data needed to update tghus making the updates faster
+	- we can only use where current of clause on single tables
+	
+	--Select rowid,employees.* from employees where department_id = 30;
+
+	declare
+		cursor c_emps is select * from employees
+                  where department_id = 30 for update;
+                  
+	begin
+		for r_emps in c_emps loop
+			update employees set salary = salary + 60
+			--where employees.employee_id = r_emps.employee_id;
+			where current of c_emps; /*this utilizes the rowids from the cursor and maps it to the rowids of the table*/
+		end loop;
+	end;
+
+----------------------------------REFERENCE CURSORS---------------------------------------------------
+	2 Types of cursors
+	- Strong (restrictive) cursor
+	- Weak (nonrestrictive) cursor
+	
+	type cursor_type_name is ref cursor [return return_type]
+	open cursor_variable_name for query;
+	
+	
+	Strong cursor types need a definitive return
+	
+	example.
+	
+	declare
+		type t_emps is ref cursor return employees%rowtype;
+		rc_emps t_emps;
+		r_emps employees%rowtype;
+	begin
+		open rc_emps for select * from employees;
+		loop
+			fetch rc_emps into r_emps;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name);
+		end loop;
+		close rc_emps;
+	end;
+--------------- in two different queries
+	declare
+		type t_emps is ref cursor return employees%rowtype;
+		rc_emps t_emps;
+		r_emps employees%rowtype;
+	begin
+		open rc_emps for select * from retired_employees;
+		loop
+			fetch rc_emps into r_emps;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name);
+		end loop;
+		close rc_emps;
+  
+		dbms_output.put_line('--------------');
+  
+		open rc_emps for select * from employees where job_id = 'IT_PROG';
+		loop
+			fetch rc_emps into r_emps;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name);
+		end loop;
+		close rc_emps;
+	end;
+	
+---------------Example of using with %type when declaring records first
+	declare
+		r_emps employees%rowtype;
+		type t_emps is ref cursor return r_emps%type;
+		rc_emps t_emps;
+
+	begin
+		open rc_emps for select * from retired_employees;
+		loop
+			fetch rc_emps into r_emps;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name);
+		end loop;
+		close rc_emps;
+  
+		dbms_output.put_line('--------------');
+  
+		open rc_emps for select * from employees where job_id = 'IT_PROG';
+		loop
+			fetch rc_emps into r_emps;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name);
+		end loop;
+		close rc_emps;
+	end;
+
+---------------manually declared record type with cursors example
+	declare
+		type ty_emps is record (e_id number, 
+								first_name employees.last_name%type, 
+								last_name employees.last_name%type,
+								department_name departments.department_name%type);
+		r_emps ty_emps;
+		type t_emps is ref cursor return ty_emps;
+		rc_emps t_emps;
+	begin
+		open rc_emps for select employee_id,first_name,last_name,department_name 
+							from employees join departments using (department_id);
+		loop
+			fetch rc_emps into r_emps;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name|| 
+					' is at the department of : '|| r_emps.department_name );
+		end loop;
+		close rc_emps;
+	end;
+
+---------------first example of weak ref cursors
+	declare
+		type ty_emps is record (e_id number, 
+							first_name employees.last_name%type, 
+							last_name employees.last_name%type,
+							department_name departments.department_name%type);
+		r_emps ty_emps;
+	
+	type t_emps is ref cursor;
+	rc_emps t_emps;
+	q varchar2(200);
+	begin
+		q := 'select employee_id,first_name,last_name,department_name 
+							from employees join departments using (department_id)';
+		open rc_emps for q;
+		loop
+			fetch rc_emps into r_emps;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name|| 
+					' is at the department of : '|| r_emps.department_name );
+		end loop;
+		close rc_emps;
+	end;
+--------------- bind variables with cursors example
+	declare
+		type ty_emps is record (e_id number, 
+								first_name employees.last_name%type, 
+								last_name employees.last_name%type,
+								department_name departments.department_name%type);
+		r_emps ty_emps;
+		
+		type t_emps is ref cursor;
+		rc_emps t_emps; /*this is our weak cursor no specific return type and it was used in different return results below */
+		r_depts departments%rowtype;
+		
+		q varchar2(200);
+		
+	begin
+			q := 'select employee_id,first_name,last_name,department_name 
+					from employees join departments using (department_id)
+                    where department_id = :t';
+			open rc_emps for q using '50';
+			loop
+				fetch rc_emps into r_emps;
+				exit when rc_emps%notfound;
+				dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name|| 
+									' is at the department of : '|| r_emps.department_name );
+			end loop;
+			close rc_emps;
+  
+			open rc_emps for select * from departments;
+			loop
+				fetch rc_emps into r_depts;
+				exit when rc_emps%notfound;
+				dbms_output.put_line(r_depts.department_id|| ' ' || r_depts.department_name);
+			end loop;
+			close rc_emps;
+	end;
+---------------sys_refcursor example
+	/*Below example uses rc_emps sys_refcursor which is a commonly used weak cursor to populate 2 record sets, once to populate the r_emps and the other to populate r_depts*/
+	declare
+		type ty_emps is record (e_id number, 
+								first_name employees.last_name%type, 
+								last_name employees.last_name%type,
+								department_name departments.department_name%type);
+		r_emps ty_emps;
+	
+		rc_emps sys_refcursor;
+		r_depts departments%rowtype;
+ 
+		q varchar2(200);
+	begin
+		q := 'select employee_id,first_name,last_name,department_name 
+                      from employees join departments using (department_id)
+                      where department_id = :t';
+		
+		open rc_emps for q using '50';
+		loop
+			fetch rc_emps into r_emps;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_emps.first_name|| ' ' || r_emps.last_name|| 
+            ' is at the department of : '|| r_emps.department_name );
+		end loop;
+		close rc_emps;
+  
+		open rc_emps for select * from departments;
+		loop
+			fetch rc_emps into r_depts;
+			exit when rc_emps%notfound;
+			dbms_output.put_line(r_depts.department_id|| ' ' || r_depts.department_name);
+		end loop;
+		close rc_emps;
+	end;
+	
+----------------------------------EXCEPTIONS-----------------------------------------------
+
+	- designed to handle runtime errors
+	- raises an exception
+	
+	three types of exceptions:
+	- predefined Oracel Server Errors
+	- nonpredefined Oracle Server Errors
+	- User-Defined Errors
+	
+	
+	declare
+	...
+	begin 
+		{exception occurs here}
+	exception
+		when exception_name then
+		.......
+		when others then
+		.......
+	end;
+	
+	
+	
+	
+---------------------------Handling Exceptions-----------------------------------------------
+
+	example.
+	
+	declare
+		v_name varchar2(6);
+		v_department_name varchar2(100);
+	begin
+		select first_name into v_name from employees where employee_id = 103;
+		select department_id  into v_department_name from employees where first_name = v_name;
+		dbms_output.put_line('Hello' || v_name|| ' Your departmentid is : '||v_department_name);
+	exception
+		when no_data_found then
+			dbms_output.put_line('There is no employee with the selected id');
+		when too_many_rows then
+		dbms_output.put_line('Query returns more than 1 row with employee name :'||v_name);
+	when others then
+		dbms_output.put_line('Unexpected error happened. Connect with the programmer');
+		dbms_output.put_line(sqlcode || ' --> ' || sqlerrm);
+end;
+
+-------user defined exception
+	exception_name EXCEPTION;
+	RAISE exception_name;
+	
+	declare
+		too_high_salary exception;
+		v_salary_check pls_integer;
+ 
+	begin
+		select salary into v_salary_check from employees where employee_id = 100;
+ 
+		if v_salary_check > 20000 then
+			raise too_high_salary;
+		else
+			dbms_output.put_line('This salary is acceptable.');
+	end if;
+ 
+
+	exception
+		when too_high_salary then
+			dbms_output.put_line('This salary is too high.  You need to decrease it.');
+	end;
+	
+-------- Raise Application_error()
+
+	
+	declare
+		too_high_salary exception;
+		v_salary_check pls_integer;
+ 
+	begin
+		select salary into v_salary_check from employees where employee_id = 100;
+ 
+		if v_salary_check > 20000 then
+			-- raise too_high_salary;
+			raise_application_error(-20243,'The salary of the selected employee is too high')
+		else
+			dbms_output.put_line('This salary is acceptable.');
+	end if;
+ 
+
+	exception
+		when too_high_salary then
+			dbms_output.put_line('This salary is too high.  You need to decrease it.');
+	end;
+	
+--------------------------------------FUNCTIONS & STORED PROCEDURE--------------------------------
+
+	- stored procedures are stored inside the schema
+	- do not return a value
+	
+	ex.
+	
+	create or replace 
+		procedure increase_salaries as
+		cursor c_emps is select * from employees_copy for update;
+		v_salary_increase number := 1.10;
+		v_old_salary number;
+	begin
+		for r_emp in c_emps loop
+			v_old_salary := r_emp.salary;
+			r_emp.salary := r_emp.salary * v_salary_increase + r_emp.salary * nvl(r_emp.commission_pct,0);
+			update employees_copy set row = r_emp where current of c_emps;
+			dbms_output.put_line('The salary of : '|| r_emp.employee_id 
+								|| ' is increased from '||v_old_salary||' to '||r_emp.salary);
+		end loop;
+		dbms_output.put_line('Procedure finished executing'); 
+	end;
+	
+---------procedures with in & out params
+	create or replace 
+		procedure increase_salaries(p_salary_increase in out number,
+									p_department_id pls_integer,
+									v_affected_employee_count out number) as
+    
+		cursor c_emps is select * from employees_copy where department_id = p_department_id for update;
+    
+		v_old_salary number;
+		v_sal_inc number := 0;
+    
+	begin
+		v_affected_employee_count := 0;
+		for r_emp in c_emps loop
+			v_affected_employee_count := v_affected_employee_count + 1;
+			v_old_salary := r_emp.salary;
+			r_emp.salary := r_emp.salary * p_salary_increase + r_emp.salary * nvl(r_emp.commission_pct,0);
+			update employees_copy set row = r_emp where current of c_emps;
+			dbms_output.put_line('The salary of : '|| r_emp.employee_id 
+									|| ' is increased from '||v_old_salary||' to '||r_emp.salary);
+			v_sal_inc := v_sal_inc + p_salary_increase + nvl(r_emp.commission_pct,0);
+		end loop;
+		p_salary_increase := v_sal_inc/ v_affected_employee_count;
+		dbms_output.put_line('Procedure finished executing'); 
+	end;
+	
+	---- call to the increase_salaries sp
+	declare
+		v_sal_inc number := 1.2;
+		v_aff_emp_count number;
+	begin
+		PRINT('SALARY INCREASE STARTED!..');
+		INCREASE_SALARIES(v_sal_inc,80,v_aff_emp_count);
+		PRINT('The affected employee count is : '|| v_aff_emp_count);
+		PRINT('The average salary increase is : '|| v_sal_inc || ' percent!..');
+		PRINT('SALARY INCREASE FINISHED!..');
+	end;	
+	--------------------------------------------------------------
+	
+	The salary of : 145 is increased from 31500 to 50400
+	The salary of : 146 is increased from 26460 to 39690
+	The salary of : 147 is increased from 23520 to 35280
+	The salary of : 148 is increased from 21560 to 32340
+	The salary of : 149 is increased from 17745 to 24843
+	The salary of : 150 is increased from 19600 to 29400
+	The salary of : 151 is increased from 17313.75 to 25104.94
+	The salary of : 152 is increased from 16402.5 to 23783.63
+	The salary of : 153 is increased from 13520 to 18928
+	The salary of : 154 is increased from 12675 to 17745
+	The salary of : 155 is increased from 10937.5 to 14765.63
+	The salary of : 156 is increased from 21025 to 32588.75
+	The salary of : 157 is increased from 19973.75 to 30959.31
+	The salary of : 158 is increased from 18922.5 to 29329.88
+	The salary of : 159 is increased from 15680 to 23520
+	The salary of : 160 is increased from 14700 to 22050
+	The salary of : 161 is increased from 12757.5 to 18498.38
+	The salary of : 162 is increased from 19136.25 to 27747.56
+	The salary of : 163 is increased from 14843.75 to 20039.06
+	The salary of : 164 is increased from 10368 to 13478.4
+	The salary of : 165 is increased from 9792 to 12729.6
+	The salary of : 166 is increased from 9216 to 11980.8
+	The salary of : 167 is increased from 8928 to 11606.4
+	The salary of : 168 is increased from 20958.75 to 30390.19
+	The salary of : 169 is increased from 16900 to 23660
+	The salary of : 170 is increased from 16224 to 22713.6
+	The salary of : 171 is increased from 11562.5 to 15609.38
+	The salary of : 172 is increased from 11406.25 to 15398.44
+	The salary of : 173 is increased from 8784 to 11419.2
+	The salary of : 174 is increased from 21560 to 32340
+	The salary of : 175 is increased from 16038 to 23255.1
+	The salary of : 176 is increased from 14534 to 20347.6
+	The salary of : 177 is increased from 14196 to 19874.4
+	The salary of : 179 is increased from 8928 to 11606.4
+	Procedure finished executing
+	The affected employee count is : 34
+	The average salary increase is : 1.425 percent!..
+	SALARY INCREASE FINISHED!.
+	
+----------FUNCTIONS ------------------------------------
+	- similar to procedures
+	- functions can get IN and OUT paramters
+	- they must return a value
+	- similar to procedures on creation
+	- can be used within a select statement
+	- can assign function to a variable
+	
+	Restrictions
+	- must be compiled and stored in db
+	- should not have an out parameter
+	- must return a valid SQL datatype
+	- cannot be used in table creations
+	- cannot call function that contails a DML statement
+	- cannot include commit, rollback, or DDL stmt
+	-if the function has a DML operation you need to have related privelages
+	
+	
+	
+	ex.
+	CREATE OR REPLACE FUNCTION GET_AVG_SAL(P_DEPT_ID DEPARTMENTS.DEPARTMENT_ID%Type) 
+		RETURN NUMBER AS 
+	
+		V_AVG_SAL NUMBER;
+	
+	BEGIN
+		SELECT AVG(SALARY) into v_avg_sal FROM EMPLOYEES WHERE DEPARTMENT_ID = p_dept_id;
+		RETURN V_AVG_SAL;
+	END GET_AVG_SAL;
+	
+	---function call
+	DECLARE
+		v_avg_sal number;
+	BEGIN
+		v_avg_sal:= GET_AVG_SAL(50);
+		dbms_output.put_line(v_avg_sal);
+	END;
+	
+	--------- implementation in select stmt
+	SELECT EMPLOYEE_ID, FIRST_NAME, SALARY, GET_AVG_SAL(DEPARTMENT_ID) AVG_SAL FROM EMPLOYEES;
+	-------------------
+	207	John		108000	22800
+	100	Steven		24000	19333.3333333333333333333333333333333333
+	101	Neena		17000	19333.3333333333333333333333333333333333
+	102	Lex			17000	19333.3333333333333333333333333333333333
+	103	Alexander	9000	5760
+	104	Bruce		6000	5760
+	105	David		4800	5760
+	
+	------------ can be in where clause
+	SELECT EMPLOYEE_ID, FIRST_NAME, SALARY
+	FROM EMPLOYEES
+	WHERE SALARY > GET_AVG_SAL(DEPARTMENT_ID);
+	
+	------------- can be used in group by or order by as well
+	SELECT GET_AVG_SAL(DEPARTMENT_ID)
+	FROM EMPLOYEES
+	WHERE SALARY > GET_AVG_SAL(DEPARTMENT_ID)
+	GROUP BY GET_AVG_SAL(DEPARTMENT_ID)
+	ORDER BY GET_AVG_SAL(DEPARTMENT_ID);
+	
+	--------------------LOCAL SUB PROGRAMS----------------
+	Is an encapsulation of a computation in some form.
+	Defining a local subprogram – Is a stored procedure and stored function.
+	this stored procs and functions are only known within the local subprogram and not the entire schema.
+	
+	
+	declare
+	/*this function returns a rowtype variable called emp*/
+	function get_emp (emp_num employees.employee_id%type) return employees%rowtype is
+		emp employees%rowtype;
+	begin
+		select * into emp from employees where employee_id = emp_num;
+		return emp;
+	end;
+ 
+	/*this procedure utilizes the function get_emp to pass in an employee id and assign it to its own emp rowtype*/
+	procedure insert_high_paid_emp (emp_id employees.employee_id%type) is
+		emp employees%rowtype;
+	begin
+		emp:= get_emp(emp_id);
+		insert into emps_high_paid values emp;
+	end;
+  
+	/*logical condition  to run the insert sp*/
+	begin
+		for r_emp in (select * from employees) loop
+			if r_emp.salary > 15000 then
+			insert_high_paid_emp(r_emp.employee_id);
+		end if;
+		end loop;
+	end;
+	
+	
+	----alternatively we can place the function inside the procedure block and eliminate the need to declare another emp variable
+	declare
+ 
+	/*this procedure utilizes the function get_emp to pass in an employee id and assign it to its own emp rowtype*/
+    procedure insert_high_paid_emp (emp_id employees.employee_id%type) is
+      emp employees%rowtype;
+    
+      /*this function returns a rowtype variable called emp*/
+        function get_emp (emp_num employees.employee_id%type) return employees%rowtype is
+        --  emp employees%rowtype;
+          begin /*BEGIN END BLOCK FOR FUNCTION*/
+            select * into emp from employees where employee_id = emp_num;
+            return emp;
+          end;
+    begin /*BEGIN END BLOCK FOR PROCDEDURE*/
+      emp:= get_emp(emp_id);
+      insert into emps_high_paid values emp;
+    end;
+  
+	/*logical condition  to run the insert sp*/
+	begin /*BEGIN END BLOCK FOR LOCAL SUBPROGRAM*/
+		for r_emp in (select * from employees) loop
+			if r_emp.salary > 15000 then
+				insert_high_paid_emp(r_emp.employee_id);
+			end if;
+		end loop;
+	end;
+	
+	---------Overloading the subprogram
+	- enables creating two or more subprograms with the same name.
+	- we can build more flexible subprograms
+	- we can overload local subprograms and package subprograms. But not standalone subprograms
+	
+	
+	declare
+ 
+ /*this procedure utilizes the function get_emp to pass in an employee id and assign it to its own emp rowtype*/
+    procedure insert_high_paid_emp (p_emp employees%rowtype) is
+      emp employees%rowtype;
+    
+      /*this function returns a rowtype variable called emp*/
+        function get_emp (emp_num employees.employee_id%type) return employees%rowtype is
+        --  emp employees%rowtype;
+          begin /*BEGIN END BLOCK FOR FUNCTION*/
+            select * into emp from employees where employee_id = emp_num;
+            return emp;
+          end;
+          
+          function get_emp (emp_email employees.email%type) return employees%rowtype is
+        --  emp employees%rowtype;
+          begin /*BEGIN END BLOCK FOR FUNCTION*/
+            select * into emp from employees where email = emp_email;
+            return emp;
+          end;
+          
+          function get_emp (f_name employees.first_name%type, l_name varchar2) return employees%rowtype is
+        --  emp employees%rowtype; 
+          begin /*BEGIN END BLOCK FOR FUNCTION*/
+            select * into emp from employees where first_name = f_name and last_name = l_name;
+            return emp;
+          end;
+          
+	begin /*BEGIN END BLOCK FOR PROCDEDURE - we overload the function get_emp as it gets constructed 3 different ways and based on the construction that is how it knows where to go*/
+      emp:= get_emp(p_emp.first_name, p_emp.last_name);
+      insert into emps_high_paid values emp;
+      
+      emp:= get_emp(p_emp.employee_id);
+      insert into emps_high_paid values emp;
+      
+      emp:= get_emp(p_emp.email);
+      insert into emps_high_paid values emp;
+      
+    end;
+  
+	/*logical condition  to run the insert sp*/
+	begin /*BEGIN END BLOCK FOR LOCAL SUBPROGRAM*/
+		for r_emp in (select * from employees) loop
+			if r_emp.salary > 15000 then
+				insert_high_paid_emp(r_emp);
+			end if;
+		end loop;
+	end;
+
+	--------------------Handling and rasing exceptions within the function
+	----------------- handling and raising the exception
+	create or replace function get_emp(emp_num employees.employee_id%type) return employees%rowtype is
+		emp employees%rowtype;
+	begin
+		select * into emp from employees where employee_id = emp_num;
+		return emp;
+	exception
+		when no_data_found then
+			dbms_output.put_line('There is no employee with the id '|| emp_num);
+			raise no_data_found;
+	end;
+----------------- handling all possible exception cases
+	create or replace function get_emp(emp_num employees.employee_id%type) return employees%rowtype is
+		emp employees%rowtype;
+	begin
+		select * into emp from employees where employee_id = emp_num;
+		return emp;
+	exception
+		when no_data_found then
+			dbms_output.put_line('There is no employee with the id '|| emp_num);
+			raise no_data_found;
+		when others then
+			dbms_output.put_line('Something unexpected happened!.');
+		return null;
+	end;
+	
+---------------------------REGULAR AND PIPELINE TABLE FUNCTIONS-------------------------
+	- REGULAR TABLE FUNCTIONS - return after completing the whole data
+	- PIPELINE FUNCTIONS - return each row
+	
+	
+	example.
+	/*In the below sequence 
+	  1) we create a t_days object that consist of a date and number */
+	  2) we then create a nested table type t_days_tab that is a table of t_days;
+	  3) out function f_get_days takes in 2 parms (p_start_date,p_day_number) and the return type is the nested table t_days_tab
+		 - v_days variable is declared and set to be a t_days_tab
+	  4) extend and populate v_days in a for in loop
+	  5) return the v_days.
+	  
+	CREATE type t_days as Object(
+		v_date date,
+		v_day_number int
+		);
+	/
+	CREATE type t_days_tab is table of t_days;
+	/
+	CREATE OR REPLACE FUNCTION f_get_days  (p_start_date date, p_day_number int)
+                        return t_days_tab is
+  
+		v_days t_days_tab:= t_days_tab(); /*initializing v_days a a t_days notice the ()*/
+  
+	begin
+		for i in 1.. p_day_number loop
+			v_days.extend;
+			v_days(i) := t_days(p_start_date + i,
+                        to_number(to_char(p_start_date + i, 'DDD')));
+		end loop;
+		return v_days;
+	end;
+	
+	6) we access this table function just like a regular table
+		ex.
+		
+		Select * from table(f_get_days(sysdate,6));
+		----------------------------------------------------
+		09-JUN-19 04:49:04	160
+		10-JUN-19 04:49:04	161
+		11-JUN-19 04:49:04	162
+		12-JUN-19 04:49:04	163
+		13-JUN-19 04:49:04	164
+		14-JUN-19 04:49:04	165
+		
+		------------------------PIPELINE TABLES------------------------------------------
+		- they should be used for larger datasets as they return after every row retreivel
+		- dont need to initialize a return type
+		- you need a return but just a return word
+		
+		CREATE OR REPLACE FUNCTION f_get_days_piped  (p_start_date date, p_day_number int)
+                        return t_days_tab PIPELINED is
+  
+		--v_days t_days_tab:= t_days_tab(); /*initializing v_days a a t_days notice the ()*/
+    
+  
+	begin
+		for i in 1.. p_day_number loop
+		--	v_days.extend;
+    --	v_days(i) := 
+      PIPE ROW (t_days(p_start_date + i,
+                  to_number(to_char(p_start_date + i,'DDD'))));
+		end loop;
+--		return v_days;
+    return;
+	end;
+	
+-----------------------------------PACKAGES------------------------------------------------
+	- advantage	of using a package
+	 - modularity
+	 - easy maintenance
+	 - encapsulation & security
+	 - performance
+	 - functionality
+	 - overloading
+	 
+---------creating a package
+	- logically group objects
+	- performance gain
+	- consist of 2 parts
+		- package specs (declare public objects only)
+		- package body
+	
+	
+	--------------------------------------------------------------------------------------------------------------------
+	--------------------------------------------CREATING & USING PACKAGES-----------------------------------------------
+	--------------------------------------------------------------------------------------------------------------------
+	----------------- Creating first package specification
+	CREATE OR REPLACE 
+	PACKAGE EMP AS 
+		v_salary_increase_rate number := 0.057; 
+		cursor cur_emps is select * from employees;
+  
+		procedure increase_salaries;
+		function get_avg_sal(p_dept_id int) return number;
+	END EMP;
+
+	----------------- Creating the package body
+	CREATE OR REPLACE
+	PACKAGE BODY EMP AS
+	
+		procedure increase_salaries AS
+		BEGIN
+			for r1 in cur_emps loop
+				update employees_copy set salary = salary + salary * v_salary_increase_rate;
+			end loop;
+		END increase_salaries;
+  
+		function get_avg_sal(p_dept_id int) return number AS
+			v_avg_sal number := 0;
+		BEGIN
+				select avg(salary) into v_avg_sal from employees_copy where
+				department_id = p_dept_id;
+				RETURN v_avg_sal;
+		END get_avg_sal;
+	END EMP;
+	----------------- using the subprograms in packages
+	exec EMP_PKG.increase_salaries;
+	----------------- using the variables in packages
+	begin
+		dbms_output.put_line(emp_pkg.get_avg_sal(50));
+		dbms_output.put_line(emp_pkg.v_salary_increase_rate);
+	end;
+	
+	 
+	 --------Visisbility of PACKAGES-----------------------------------------------
+	 - an object is visibe to the others only if it is declared in the package spec
+	 - we can declare the variables 
+		- inside the package spec
+		- inside the package body
+	
+	-------Forward Declaration -----------------------------------------------------
+	- PLSQL is a top down program so if you try to access soemthing that is now declared or defined yet within the package body
+	  it will not compile.  To handle this you need to do forward delcaration.
+	  
+	CREATE OR REPLACE
+	PACKAGE BODY EMP AS
+		v_sal_inc int :=500;
+		v_sal_inc2 int :=500;
+		
+		/*without this forward declaration since the get_sal is below the location of the print_test procedure the body wont copile*/
+		function get_sal(e_id employees.employee_id%type) return number;
+		
+		procedure print_test as
+		begin
+			dbms_output.put_line('Test: '||v_sal_inc);
+			dbms_output.put_line('Tests salary: '||get_sal(102));
+		end;
+		
+		procedure increase_salaries AS
+		BEGIN
+			for r1 in cur_emps loop
+				update employees_copy set salary = salary + salary * v_salary_increase_rate;
+			end loop;
+		END increase_salaries;
+  
+		function get_avg_sal(p_dept_id int) return number AS
+			v_avg_sal number := 0;
+		BEGIN
+				select avg(salary) into v_avg_sal from employees_copy where
+				department_id = p_dept_id;
+				RETURN v_avg_sal;
+		END get_avg_sal;
+		
+		
+		function get_sal(e_id employees.employee_id%type) return number is
+		v_sal number:=0
+		Begin
+			select salary into v_sal from employees where employee_id = e_id;
+			return v_sal;
+		END;
+		
+	END EMP;
+	
+-----------------------------------------------COLLECTIONS IN PACKAGE EXAMPLE-----------------------------
+	/*Package Spec*/
+	create or replace 
+	PACKAGE EMP_PKG AS
+
+	type emp_table_type is table of employees%rowtype index by pls_integer;
+  
+	v_salary_increase_rate number := 1000;
+	v_min_employee_salary number := 5000;
+  
+	cursor cur_emps is select * from employees;
+ 
+	procedure increase_salaries;
+	procedure increase_low_salaries;
+  
+	function get_avg_sal(p_dept_id int) return number;
+ 
+	function get_employees return emp_table_type;
+	function get_employees_tobe_incremented return emp_table_type;
+  
+	/*v_emp has to be declared as a in out because its not constant,
+	in parameters are read only, so being we want to change it we need it to be in out
+	*/
+	function arrange_for_min_salary(v_emp in out employees%rowtype) return employees%rowtype;
+  
+	END EMP_PKG;
+	  
+	------------------------------------------------------------------------
+	/*Package Body*/
+	create or replace 
+	PACKAGE BODY EMP_PKG AS
+
+		procedure increase_salaries AS
+		BEGIN
+			for r1 in cur_emps loop
+			update employees_copy set salary = salary +  v_salary_increase_rate;
+			end loop;
+		END increase_salaries;
+
+		function get_avg_sal(p_dept_id int) return number AS
+		v_avg_sal number:=0;
+		BEGIN
+			Select avg(salary) into v_avg_sal from employees_copy
+			where department_id = p_dept_id;
+			return v_avg_sal;
+		END get_avg_sal;
+
+		/*Return all the employees from employees table in an associative array*/
+		function get_employees return emp_table_type AS
+		v_emps emp_table_type;
+		BEGIN
+			for cur_emps in (Select * from employees_copy) loop
+			v_emps(cur_emps.employee_id):= cur_emps;
+			end loop;
+			return v_emps;
+		END;
+  
+		/*Returns the employees whose salaries are under the minimum salary*/
+		function get_employees_tobe_incremented return emp_table_type AS
+		v_emps emp_table_type;
+		i employees.employee_id%type;
+		BEGIN
+			v_emps:= get_employees();
+			i := v_emps.first();
+			while i is not null loop
+			if v_emps(i).salary > v_min_employee_salary then
+				v_emps.delete(i);
+			end if;
+			i :=v_emps.next(i);
+			end loop;
+			return v_emps;
+		END;
+  
+		/*this procedure increases the salaries of the employees whose salary has a lower salary than the company standard */
+		procedure increase_low_salaries AS
+		v_emps emp_table_type;
+		v_emp employees%rowtype;
+		i employees.employee_id%type;
+		BEGIN
+			v_emps:= get_employees_tobe_incremented();
+			i:= v_emps.first();
+			while i is not null loop
+				v_emp := arrange_for_min_salary(v_emps(i));
+				update employees_copy set row = v_emp where employee_id = i;
+				i :=v_emps.next(i);
+			end loop;
+  
+		END;
+
+		/*this funciton return the employees by arranging the salary based on company standard*/
+		function arrange_for_min_salary(v_emp in out employees%rowtype) return employees%rowtype AS
+		BEGIN
+			v_emp.salary := v_emp.salary + v_salary_increase_rate;
+			if v_emp.salary <v_min_employee_salary then
+				v_emp.salary := v_min_employee_salary;
+			end if;
+			return v_emp;
+		END;
+  
+  
+	END EMP_PKG;
+
+-------------------------------------------HOW TO FIND PACKAGES-----------------------------------------------
+/*user source gets you everything*/
+Select * from user_source where type = 'PACKAGE BODY'
+
+/*user obkects gets you the status details*/
+Select * from user_objects where object_type = 'PACKAGE BODY'
+
+
+------------------------------------------TRIGGERS & TRIGGER TYPES-------------------------------------
+
+	- Triggers are PL/SQL blocks that execute before or after or instead of a specific event.
+	- Triggers are executed automatically by the database server.
+	- Triggers are defines in a table, view, schema, or databases.
+	- Triggers are fired when:
+		- dml operations occurs (insert, update, delete)
+		- ddl operation occurs (create, alter, drop)
+		- when some database operation occurs (logon, startup, servererror)
+		
+	- Why triggers
+		- security
+		- auditing
+		- data integrity
+		- table logging
+		- event logging
+		- derived data
+		
+	- Three types of triggers
+		- DML TRIGGERS
+		- Compound TRIGGERS
+		- Non-DML Triggers
+		
+---------------------------DML Triggers---------------
+	- DML Triggers are PL/SQL blocks running when the specified event occcurs
+	- we use DML Triggers for duplications, logs table maintenance, security .. etc
+	
+	/*Trigger Creation Schema*/
+	CREATE [OR REPLACE] TRIGGER trigger_name
+		TIMING = BEFORE | AFTER | INSTEAD OF
+		EVENT  = INSERT | UPDATE | DELETE | UPDATE OF column_list
+		ON object_name
+		[REFERECING OLD AS old NEW AS new]
+		[FOR EACH ROW ]
+		[WHEN (Condition)]
+		[DECLARE variable, types, etc]
+		Begin
+			trigger_body
+		 [EXCEPTION]
+		END;
+	
+--------------------------Timing of Triggers---------------------
+	- Before
+		- we can allow or reject the specified action
+		- we can specify default values for the columns
+		- we can validate complex business rules
+	- After
+		- we can make some after checks 
+		- duplicate tables or add log records
+	- Instead of
+		- we can do something else if condition found
+		
+	
+		
+	example
+	/*Below trigger will output a statement in the event an Insert or update occurs on the employees_copy table*/
+	CREATE OR REPLACE TRIGGER FIRST_TRIGGER 
+		BEFORE INSERT OR UPDATE ON EMPLOYEES_COPY  
+	BEGIN
+		dbms_output.put_line('An insert or Update occured in the employees_copy table.');
+	END;
+	
+	example 
+	/*Below is a row level trigger
+	CREATE or REPLACE TRIGGER BEFORE_ROW_EMP_CPY 
+		BEFORE INSERT OR UPDATE on EMPLOYEES_COPY 
+		FOR EACH ROW
+	BEGIN
+		dbms_output.put_line('Before Row Trigger is Fired!.');
+		dbms_output.put_line('The salary of Employee '||:old.employee_id||'-> Before:' ||:old.salary||' Aftr:'||:new.salary);
+	END;
+	
+	example using alias for old and new
+	create or replace trigger before_row_emp_cpy 
+		before insert or update on employees_copy
+		
+		referencing old as O new as N
+	
+		for each row
+	begin
+		dbms_output.put_line('Before Row Trigger is Fired!.');
+		dbms_output.put_line('The salary of Employee '||:O.employee_id
+			||'-> Before:' ||:O.salary||' Aftr:'||:N.salary);
+	end;
+	
+------------------CONDITIONAL PREDICATES
+ - allow us to make action on certain conditions
+	
+	example
+	create or replace trigger before_row_emp_cpy 
+		before insert or update on employees_copy
+	referencing old as O new as N
+	for each row
+	begin
+		dbms_output.put_line('Before Row Trigger is Fired!.');
+		dbms_output.put_line('The salary of Employee '||:O.employee_id
+			||'-> Before:' ||:O.salary||' Aftr:'||:N.salary);
+    
+		/*conditional predicate*/
+		if inserting then
+			dbms_output.put_line('An INSERT occured on the employees_copy table');
+		elsif updating then
+			dbms_output.put_line('An UPDATE occured on the employees_copy table');
+		end if;
+    
+	end;
+	
+-------------------RAISE APPLICATION ERROR
+	create or replace trigger before_row_emp_cpy 
+	before insert or update or delete on employees_copy
+	referencing old as O new as N
+	for each row
+	begin
+		dbms_output.put_line('Before Row Trigger is Fired!.');
+		dbms_output.put_line('The salary of Employee '||:O.employee_id
+			||'-> Before:' ||:O.salary||' Aftr:'||:N.salary);
+    
+		/*conditional predicate*/
+		if inserting then
+		
+			if :n.hire_date > sysdate then
+				raise_application_error(-20000,'You cannot enter a future hire..');
+			end if;
+
+			dbms_output.put_line('An INSERT occured on the employees_copy table');
+		elsif updating ('salary') then
+
+			if :n.salary > 50000 then
+				raise_application_error(-20002, 'A salary cannot be higher than 50000..');
+			end if;
+
+			dbms_output.put_line('An UPDATE occured on the employees_copy table and salary column');
+		elsif updating then
+			dbms_output.put_line('An UPDATE occured on the employees_copy table');
+		elsif deleting then
+
+			raise_application_error(-20001,'You cannot delete from the employees_copy table..');
+
+			dbms_output.put_line('A DELETE occured on the employees_copy table');
+		end if;
+    
+	end;
+	
+------------------UPDATE OF EVENT TRIGGER
+	create or replace trigger prevent_updates_of_constant_columns
+	/*Below states you perform before trigger if there is an attempt to update the hire_date or salary*/
+	before update of hire_date,salary on employees_copy 
+	
+	for each row
+	begin
+		raise_application_error(-20005,'You cannot modify the hire_date and salary columns');
+	end;
+	
+-------------------USING WHEN CLAUSE ON TRIGGERS
+	create or replace trigger prevent_high_salary
+	before insert or update of salary on employees_copy 
+	for each row
+	
+	when (new.salary > 50000)
+	
+	begin
+		raise_application_error(-20006,'A salary cannot be higher than 50000!.');
+	end;	
+
+-------------------INSTEAD OF TRIGGERS
+	- used in views and usuallyon complex views (subset of data from more than 1 table)
+	- check options wontbe enforced on instead of views
+	- beofre and after timing options are not valid for instead of views
+	
+	example
+	/*In the below example we created a view called VW_EMP_DETAILS and we later try to update a columns on the view, however this will not be allowed without a INSTEAD OF trigger due to the fact we have a complex view */
+	
+	create table departments_copy as select * from departments;
+	/
+	Create or replace view VW_EMP_DETAILS AS
+		SELECT UPPER(DEPARTMENT_NAME) DNAME, MIN(SALARY) MIN_SAL, MAX(SALARY) MAX_SAL
+		FROM EMPLOYEES_COPY, DEPARTMENTS_COPY
+		WHERE EMPLOYEES_COPY.department_id = departments_copy.department_id
+		GROUP BY DEPARTMENT_NAME;
+	
+	/*The below update wont work until the instead of trigger is created*/
+	/*Based on the instead of trigger the only update allowed is on view is the DNAME column nothing else*/
+	UPDATE VW_EMP_DETAILS SET DNAME = 'EXEC DEPT' WHERE
+	UPPER(DNAME) = 'EXECUTIVE';
+	
+	
+	/*INSTEAD OF TRIGGER*/
+	CREATE OR REPLACE TRIGGER EMP_DETAILS_VW_DML
+	
+	INSTEAD OF INSERT OR UPDATE OR DELETE ON VW_EMP_DETAILS
+	
+	FOR EACH ROW
+	DECLARE
+		V_DEPT_ID PLS_INTEGER;
+	BEGIN
+  
+		IF INSERTING THEN
+			SELECT MAX(DEPARTMENT_ID) + 10 INTO V_DEPT_ID FROM DEPARTMENTS_COPY;
+			INSERT INTO DEPARTMENTS_COPY VALUES (V_DEPT_ID, :NEW.DNAME,NULL,NULL);
+		ELSIF DELETING THEN
+			DELETE FROM DEPARTMENTS_COPY WHERE UPPER(DEPARTMENT_NAME) = UPPER(:OLD.DNAME);
+		ELSIF UPDATING('DNAME') THEN
+			UPDATE DEPARTMENTS_COPY SET DEPARTMENT_NAME = :NEW.DNAME
+			WHERE UPPER(DEPARTMENT_NAME) = UPPER(:OLD.DNAME);
+		ELSE
+			RAISE_APPLICATION_ERROR(-20007,'You cannot update any data other than department name!.');
+		END IF;
+	END;
+	
